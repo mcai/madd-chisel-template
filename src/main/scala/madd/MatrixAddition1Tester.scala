@@ -11,14 +11,6 @@ class MatrixAddition1Tester(dut: MatrixAddition1)
     poke(dut.io.b(i), i)
   }
 
-  poke(dut.io.inValid, 1)
-
-  step(1)
-
-  while (peek(dut.io.outValid) == BigInt(0)) {
-    step(1)
-  }
-
   for (i <- 0 until 3 * 2) {
     expect(dut.io.out(i), i * 2)
   }

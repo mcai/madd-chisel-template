@@ -8,19 +8,15 @@ class MatrixAddition1(M: Int, N: Int) extends Module {
   val io = IO(new MatrixAddition1IO(M, N))
 
   io.out := DontCare
-  io.outValid := false.B
 
-  when(io.inValid) {
-    for (i <- 0 until M) {
-      for (j <- 0 until N) {
-        var sum = 0.S(32.W)
+  for (i <- 0 until M) {
+    for (j <- 0 until N) {
+      var sum = 0.S(32.W)
 
-        sum = io.a(i * N + j) + io.b(i * N + j)
+      sum = io.a(i * N + j) + io.b(i * N + j)
 
-        io.out(i * N + j) := sum
-      }
+      io.out(i * N + j) := sum
     }
-    io.outValid := true.B
   }
 }
 
