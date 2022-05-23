@@ -15,7 +15,7 @@ class MatrixAddition1(M: Int, N: Int) extends Module {
       for (j <- 0 until N) {
         var sum = 0.S(32.W)
 
-        sum = io.a(i * N + j) * io.b(i * N + j)
+        sum = io.a(i * N + j) + io.b(i * N + j)
 
         io.out(i * N + j) := sum
       }
