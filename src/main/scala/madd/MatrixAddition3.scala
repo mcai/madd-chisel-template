@@ -7,7 +7,7 @@ import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
 class MatrixAddition3(M: Int, N: Int)
     extends Module
     with CurrentCycle {
-  val io = IO(new MatrixAddition2IO(M, N))
+  val io = IO(new MatrixAddition3IO(M, N))
 
   io.in.ready := false.B
 
