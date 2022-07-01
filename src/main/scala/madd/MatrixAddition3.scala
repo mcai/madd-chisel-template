@@ -3,6 +3,7 @@ package madd
 import chisel3._
 import chisel3.util._
 import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
+import common.CurrentCycle
 
 class MatrixAddition3(M: Int, N: Int)
     extends Module
