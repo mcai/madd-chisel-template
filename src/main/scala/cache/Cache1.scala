@@ -36,6 +36,8 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
 
   val hit = metaArray(index).valid && metaArray(index).tag === tag
 
+  val hitCounter = Counter(200)
+
   val addressReg = Reg(UInt(addressWidth.W))
   val tagReg = getTag(addressReg)
   val indexReg = getIndex(addressReg)
@@ -66,6 +68,8 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
 
         when(io.request.bits.writeEnable) {
           when(hit) {
+            hitCounter.inc()
+
             dataArray(index) := io.request.bits.writeData
 
             regState := sWriteResponse
@@ -84,6 +88,8 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
           }
         }.otherwise {
           when(hit) {
+            hitCounter.inc()
+            
             regState := sReadData
           }.otherwise {
             when(metaArray(index).valid && metaArray(index).dirty) {
@@ -124,7 +130,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
   }
 
   chisel3.printf(
-    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire()}, response.fire: ${io.response.fire()}, write: ${io.request.bits.writeEnable}, hit: ${hit}\n"
+    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire()}, response.fire: ${io.response.fire()}, writeEnable: ${io.request.bits.writeEnable}, address: ${io.request.bits.address}, tag: ${tag}, index: ${index}, hit: ${hit}, hitCounter: ${hitCounter.value}\n"
   )
 }
 

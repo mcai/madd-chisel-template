@@ -18,6 +18,8 @@ trait CacheConfig {
     val indexBits = log2Ceil(numSets) // log2(128) = 7
     val tagBits = addressWidth - indexBits - offsetBits // 21
 
+    scala.Predef.printf(s"indexBits: ${indexBits}, offsetBits: ${offsetBits}\n")
+
     def getTag(address: UInt): UInt = {
         return address(addressWidth - 1, indexBits + offsetBits)
     }

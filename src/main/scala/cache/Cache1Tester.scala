@@ -12,7 +12,7 @@ class Cache1Tester(dut: Cache1) extends PeekPokeTester(dut) {
     val numLinesInTrace = 100
 
     for (i <- 0 until numLinesInTrace) {
-      trace += ((i % 2 == 0, i, i + 1)) // TODO: generate your data here as you like
+      trace += ((i % 2 == 0, i * 16, (i + 1))) // TODO: generate your data here as you like
     }
     
     // initialize the valid and ready bits to false
