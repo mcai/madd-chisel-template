@@ -7,6 +7,7 @@ import common.CurrentCycle
 
 class Meta extends Bundle with CacheConfig {
   val valid = Bool()
+  val dirty = Bool()
   val address = UInt(addressWidth.W)
   val tag = UInt(tagBits.W)
 }
@@ -32,9 +33,12 @@ class Cache1 extends Module with CacheConfig {
 
     val tag = getTag(address)
     val index = getIndex(address)
-    val offset = getOffset(address)
 
     val hit = metaArray(index).valid && metaArray(index).tag === tag
+
+    val addressReg = Reg(UInt(addressWidth.W))
+    val tagReg = getTag(addressReg)
+    val indexReg = getIndex(addressReg)
 
     val memory = Module(new Memory(dataWidth, 256))
 
@@ -58,17 +62,20 @@ class Cache1 extends Module with CacheConfig {
         io.request.ready := true.B
 
         when(io.request.fire()) {
+          addressReg := io.request.bits.address
+
           when(io.request.bits.writeEnable) {
             when(hit) {
               dataArray(index) := io.request.bits.writeData
 
               regState := sWriteResponse
             }.otherwise {
-              when(metaArray(index).valid) {
+              when(metaArray(index).valid && metaArray(index).dirty) {
                 writeback()
               }
 
               metaArray(index).valid := true.B
+              metaArray(index).dirty := true.B
               metaArray(index).tag := tag
               metaArray(index).address := address
               dataArray(index) := io.request.bits.writeData
@@ -79,7 +86,7 @@ class Cache1 extends Module with CacheConfig {
             when(hit) {
               regState := sReadData
             }.otherwise {
-              when(metaArray(index).valid) {
+              when(metaArray(index).valid && metaArray(index).dirty) {
                 writeback()
               }
 
@@ -91,16 +98,17 @@ class Cache1 extends Module with CacheConfig {
         }
       }
       is(sReadMiss) {
-        metaArray(index).valid := true.B
-        metaArray(index).tag := tag
-        metaArray(index).address := address
-        dataArray(index) := memory.io.readData
+        metaArray(indexReg).valid := true.B
+        metaArray(indexReg).dirty := false.B
+        metaArray(indexReg).tag := tagReg
+        metaArray(indexReg).address := addressReg
+        dataArray(indexReg) := memory.io.readData
 
         regState := sReadData
       }
       is(sReadData) {
         io.response.valid := true.B
-        io.response.bits.readData := dataArray(index)
+        io.response.bits.readData := dataArray(indexReg)
 
         when(io.response.fire()) {
           regState := sIdle
