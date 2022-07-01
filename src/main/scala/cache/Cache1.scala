@@ -30,11 +30,11 @@ class Cache1 extends Module with CacheConfig {
 
     val address = io.request.bits.address
 
-    val tag = address(addressWidth - 1, indexBits + offsetBits)
-    val index = address(indexBits + offsetBits - 1, offsetBits)
-    val offset = address(offsetBits - 1, 0)
+    val tag = getTag(address)
+    val index = getIndex(address)
+    val offset = getOffset(address)
 
-    val hit = metaArray(index).tag === tag
+    val hit = metaArray(index).valid && metaArray(index).tag === tag
 
     val memory = Module(new Memory(dataWidth, 256))
 
