@@ -17,6 +17,9 @@ class Response extends Bundle with CacheConfig {
 class CacheIO extends Bundle with CacheConfig {
   val request = Flipped(Decoupled(new Request))
   val response = Decoupled(new Response)
+
+  val numHits = Output(UInt(32.W))
+  val numCycles = Output(UInt(32.W))
   
   override def cloneType =
     new CacheIO().asInstanceOf[this.type]

@@ -13,12 +13,23 @@ class Meta extends Bundle with CacheConfig {
 }
 
 class Cache1 extends Module with CacheConfig with CurrentCycle {
+  scala.Predef.printf(s"indexBits: ${indexBits}, offsetBits: ${offsetBits}\n")
+
   assert(assoc == 1)
 
   val io = IO(new CacheIO)
 
-  val dataArray = Reg(Vec(numSets, UInt((blockSizeInBytes * 8).W)))
-  val metaArray = Reg(Vec(numSets, new Meta()))
+  val dataArray = RegInit(VecInit(Seq.fill(numSets)(0.U((blockSizeInBytes * 8).W))))
+  val metaArray = RegInit(VecInit(Seq.fill(numSets)(
+    {
+      val meta = Wire(new Meta())
+      meta.valid := false.B
+      meta.dirty := false.B
+      meta.address := 0.U
+      meta.tag := 0.U
+      meta
+    }
+  )))
 
   val sIdle :: sReadMiss :: sReadData :: sWriteResponse :: Nil = Enum(4)
 
@@ -34,9 +45,13 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
   val tag = getTag(address)
   val index = getIndex(address)
 
-  val hit = metaArray(index).valid && metaArray(index).tag === tag
+  val hit = regState === sIdle && io.request.fire() && metaArray(index).valid && metaArray(index).tag === tag
 
-  val hitCounter = Counter(200)
+  val regNumHits = RegInit(0.U(32.W))
+
+  io.numHits := regNumHits
+
+  io.numCycles := currentCycle
 
   val addressReg = Reg(UInt(addressWidth.W))
   val tagReg = getTag(addressReg)
@@ -68,7 +83,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
 
         when(io.request.bits.writeEnable) {
           when(hit) {
-            hitCounter.inc()
+            regNumHits := regNumHits + 1.U
 
             dataArray(index) := io.request.bits.writeData
 
@@ -88,7 +103,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
           }
         }.otherwise {
           when(hit) {
-            hitCounter.inc()
+            regNumHits := regNumHits + 1.U
             
             regState := sReadData
           }.otherwise {
@@ -130,7 +145,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
   }
 
   chisel3.printf(
-    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire()}, response.fire: ${io.response.fire()}, writeEnable: ${io.request.bits.writeEnable}, address: ${io.request.bits.address}, tag: ${tag}, index: ${index}, hit: ${hit}, hitCounter: ${hitCounter.value}\n"
+    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire()}, response.fire(): ${io.response.fire()}, writeEnable: ${io.request.bits.writeEnable}, address: ${io.request.bits.address}, tag: ${tag}, index: ${index}, hit: ${hit}, regNumHits: ${regNumHits}\n"
   )
 }
 

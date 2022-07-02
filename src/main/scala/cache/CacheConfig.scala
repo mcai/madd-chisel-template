@@ -12,13 +12,11 @@ trait CacheConfig {
     val assoc = 1 // 1~8
     val numSets = 128
 
-    val capacityInSize = blockSizeInBytes * assoc * numSets // 16 * assoc * 128 bytes = 2^4 * assoc * 2^7 bytes = 2^11 * assoc bytes = 2 * assoc kB
+    val capacityInBytes = blockSizeInBytes * assoc * numSets // 16 * assoc * 128 bytes = 2^4 * assoc * 2^7 bytes = 2^11 * assoc bytes = 2 * assoc kB
 
     val offsetBits = log2Ceil(blockSizeInBytes) // log2(16) = 4
     val indexBits = log2Ceil(numSets) // log2(128) = 7
     val tagBits = addressWidth - indexBits - offsetBits // 21
-
-    scala.Predef.printf(s"indexBits: ${indexBits}, offsetBits: ${offsetBits}\n")
 
     def getTag(address: UInt): UInt = {
         return address(addressWidth - 1, indexBits + offsetBits)

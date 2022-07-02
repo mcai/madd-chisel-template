@@ -9,10 +9,10 @@ class Cache1Tester(dut: Cache1) extends PeekPokeTester(dut) {
     // (writeEnable, address, data)
     var trace = new ListBuffer[(Boolean, Int, Int)]()
 
-    val numLinesInTrace = 100
+    val numAccesses = 1024
 
-    for (i <- 0 until numLinesInTrace) {
-      trace += ((i % 2 == 0, i * 16, (i + 1))) // TODO: generate your data here as you like
+    for (i <- 0 until numAccesses) {
+      trace += ((i % 2 == 0, i * 16 % 256, (i + 1))) // TODO: generate your data here as you like
     }
     
     // initialize the valid and ready bits to false
@@ -20,7 +20,7 @@ class Cache1Tester(dut: Cache1) extends PeekPokeTester(dut) {
     poke(dut.io.response.ready, false)
 
     // process the lines in the trace
-    for (i <- 0 until numLinesInTrace) {
+    for (i <- 0 until numAccesses) {
       // wait until the request is ready
       while (peek(dut.io.request.ready) == BigInt(0)) {
         step(1)
@@ -54,10 +54,15 @@ class Cache1Tester(dut: Cache1) extends PeekPokeTester(dut) {
       // mark the response as not ready again
       poke(dut.io.response.ready, false)
     }
+
+    val numHits = peek(dut.io.numHits)
+    val numCycles = peek(dut.io.numCycles)
+
+    scala.Predef.printf(s"[Tester] numAccesses: ${numAccesses}, numHits: ${numHits}, hitRatio: ${numHits.toDouble / numAccesses}, numCycles: ${numCycles}\n");
 }
 
 object Cache1Tester extends App {
-  chisel3.iotesters.Driver(() => new Cache1()) { dut =>
+  chisel3.iotesters.Driver(() => new Cache1(), "treadle") { dut =>
     new Cache1Tester(dut)
   }
 }

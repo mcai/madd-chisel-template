@@ -5,8 +5,9 @@ import chisel3.util._
 
 object CurrentCycle {
   def apply(): UInt = {
-    val (currentCycle, _) = Counter(true.B, Int.MaxValue)
-    RegNext(currentCycle, 0.U)
+    val regCurrentCycle = RegInit(0.U(32.W))
+    regCurrentCycle := regCurrentCycle + 1.U
+    regCurrentCycle
   }
 }
 

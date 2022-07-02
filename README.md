@@ -1,32 +1,18 @@
 # README.md
 
-Single-cycle and multi-cycle matrix addition samples.
+Matrix addition and cache samples.
 
 # File Structure
 
 src/main/scala/madd/MatrixAddition1*.scala - Single-Cycle matrix addition sample in Chisel 3
 src/main/scala/madd/MatrixAddition2*.scala - Multi-Cycle matrix addition sample in Chisel 3
 src/main/scala/madd/MatrixAddition3*.scala - Pipelined matrix addition sample in Chisel 3
+src/main/scala/cache/Cache1.scala - Cache sample in Chisel 3
 
 # Usage
 
 Step 1. Use Visual Studio Code (https://code.visualstudio.com/) + Docker Extension (Docker + Remote Containers, both by Microsoft) to attach to the Docker container as told by the instructor. 
 
-Step 2. Inside the container, run `./test.sh` to run sample test for single cycle, multi-cycle and pipelined matrix addition samples.
+Step 2. Inside the container, run `./test.sh` to run sample test for single cycle, multi-cycle, pipelined matrix addition and cache samples.
 
-Step 3. Implement, run and test single-cycle, multi-cycle and pipelined matrix multiplication in Chisel 3.
-
-# TODOs
-
-madd/mmult
-    MatrixMultiplication1.scala -> single cycle matrix multiplication
-    MatrixMultiplication1IO.scala
-    MatrixMultiplication1Tester.scala
-
-    MatrixMultiplication2.scala -> multi cycle matrix multiplication
-    MatrixMultiplication2IO.scala
-    MatrixMultiplication2Tester.scala
-
-    MatrixMultiplication3.scala -> pipelined matrix multiplication
-    MatrixMultiplication3IO.scala
-    MatrixMultiplication3Tester.scala
+Step 3. Implement, run and test single-cycle, multi-cycle, pipelined matrix multiplication and cache in Chisel 3.
