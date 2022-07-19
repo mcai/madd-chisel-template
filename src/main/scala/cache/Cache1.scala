@@ -10,23 +10,23 @@ class Meta extends Bundle with CacheConfig {
   val dirty = Bool()
   val address = UInt(addressWidth.W)
   val tag = UInt(tagBits.W)
+  val timestamp = UInt(32.W)
 }
 
 class Cache1 extends Module with CacheConfig with CurrentCycle {
   scala.Predef.printf(s"indexBits: ${indexBits}, offsetBits: ${offsetBits}\n")
 
-  assert(assoc == 1)
-
   val io = IO(new CacheIO)
 
-  val dataArray = RegInit(VecInit(Seq.fill(numSets)(0.U((blockSizeInBytes * 8).W))))
-  val metaArray = RegInit(VecInit(Seq.fill(numSets)(
+  val dataArray = RegInit(VecInit(Seq.fill(assoc * numSets)(0.U((blockSizeInBytes * 8).W))))
+  val metaArray = RegInit(VecInit(Seq.fill(assoc * numSets)(
     {
       val meta = Wire(new Meta())
       meta.valid := false.B
       meta.dirty := false.B
       meta.address := 0.U
       meta.tag := 0.U
+      meta.timestamp := 0.U
       meta
     }
   )))
@@ -45,8 +45,6 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
   val tag = getTag(address)
   val index = getIndex(address)
 
-  val hit = regState === sIdle && io.request.fire() && metaArray(index).valid && metaArray(index).tag === tag
-
   val regNumHits = RegInit(0.U(32.W))
 
   io.numHits := regNumHits
@@ -57,19 +55,81 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
   val tagReg = getTag(addressReg)
   val indexReg = getIndex(addressReg)
 
+  val wayReg = RegInit(assoc.U)
+
   val memory = Module(new Memory(dataWidth, 256))
 
   memory.io.writeEnable := false.B
   memory.io.address := DontCare
   memory.io.writeData := DontCare
 
-  def writeback() {
-      memory.io.writeEnable := true.B
-      memory.io.address := metaArray(index).address
-      memory.io.writeData := dataArray(index)
+  def fullIndex(index: UInt, way: UInt): UInt = assoc.U * index + way
+
+  def lookup(index: UInt, tag: UInt): UInt = {
+    var way = assoc.U
+
+    for (i <- 0 until assoc) {
+      var meta = metaArray(fullIndex(index, i.U))
+      way = Mux(meta.valid && meta.tag === tag, i.U, way)
+    }
+
+    way
   }
 
-  def refill() {
+  def findInvalidWay(index: UInt): UInt = {
+    var way = assoc.U
+
+    for (i <- 0 until assoc) {
+      var meta = metaArray(fullIndex(index, i.U))
+      way = Mux(way === assoc.U && !meta.valid, i.U, way)
+    }
+
+    way
+  }
+
+  def findVictimWay(index: UInt): UInt = {
+    var way = assoc.U
+    var minTimestamp = currentCycle
+
+    for (i <- 0 until assoc) {
+      var meta = metaArray(fullIndex(index, i.U))
+      var found = meta.timestamp < minTimestamp
+      minTimestamp = Mux(found, meta.timestamp, minTimestamp)
+      way = Mux(found, i.U, way)
+    }
+
+    way
+  }
+
+  def writeback(index: UInt, way: UInt): Unit = {
+    var fi = fullIndex(index, way)
+
+    memory.io.writeEnable := true.B
+    memory.io.address := metaArray(fi).address
+    memory.io.writeData := dataArray(fi)
+  }
+
+  def doWrite(index: UInt, way: UInt): Unit = {
+    var fi = fullIndex(index, way)
+
+    metaArray(fi).valid := true.B
+    metaArray(fi).dirty := true.B
+    metaArray(fi).tag := tag
+    metaArray(fi).address := address
+    dataArray(fi) := io.request.bits.writeData
+  }
+
+  def doRead(index: UInt, way: UInt): Unit = {
+    var fi = fullIndex(index, way)
+
+    metaArray(fi).valid := true.B
+    metaArray(fi).dirty := false.B
+    metaArray(fi).tag := tagReg
+    metaArray(fi).address := addressReg
+    dataArray(fi) := memory.io.readData
+  }
+
+  def refill(): Unit = {
       memory.io.writeEnable := false.B
       memory.io.address := io.request.bits.address
   }
@@ -81,23 +141,34 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
       when(io.request.fire()) {
         addressReg := io.request.bits.address
 
+        var way = lookup(index, tag)
+        var hit = way =/= assoc.U
+
         when(io.request.bits.writeEnable) {
           when(hit) {
             regNumHits := regNumHits + 1.U
 
-            dataArray(index) := io.request.bits.writeData
+            var fi = fullIndex(index, way)
+
+            dataArray(fi) := io.request.bits.writeData
 
             regState := sWriteResponse
           }.otherwise {
-            when(metaArray(index).valid && metaArray(index).dirty) {
-              writeback()
-            }
+            var invalidWay = findInvalidWay(index)
 
-            metaArray(index).valid := true.B
-            metaArray(index).dirty := true.B
-            metaArray(index).tag := tag
-            metaArray(index).address := address
-            dataArray(index) := io.request.bits.writeData
+            when(invalidWay === assoc.U) {
+              var victimWay = findVictimWay(index)
+              
+              var victimMeta = metaArray(fullIndex(index, victimWay))
+              
+              when(victimMeta.dirty) {
+                writeback(index, victimWay)
+              }
+
+              doWrite(index, victimWay)
+            }.otherwise {
+              doWrite(index, invalidWay)
+            }
 
             regState := sWriteResponse
           }
@@ -107,8 +178,19 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
             
             regState := sReadData
           }.otherwise {
-            when(metaArray(index).valid && metaArray(index).dirty) {
-              writeback()
+            var invalidWay = findInvalidWay(index)
+
+            when(invalidWay === assoc.U) {
+              var victimWay = findVictimWay(index)
+              var victimMeta = metaArray(fullIndex(index, victimWay))
+              
+              when(victimMeta.dirty) {
+                writeback(index, victimWay)
+              }
+
+              wayReg := victimWay
+            }.otherwise {
+              wayReg := invalidWay
             }
 
             refill()
@@ -119,17 +201,15 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
       }
     }
     is(sReadMiss) {
-      metaArray(indexReg).valid := true.B
-      metaArray(indexReg).dirty := false.B
-      metaArray(indexReg).tag := tagReg
-      metaArray(indexReg).address := addressReg
-      dataArray(indexReg) := memory.io.readData
+      doRead(indexReg, wayReg)
 
       regState := sReadData
     }
     is(sReadData) {
+      var fi = fullIndex(indexReg, wayReg)
+
       io.response.valid := true.B
-      io.response.bits.readData := dataArray(indexReg)
+      io.response.bits.readData := dataArray(fi)
 
       when(io.response.fire()) {
         regState := sIdle
@@ -145,7 +225,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
   }
 
   chisel3.printf(
-    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire()}, response.fire(): ${io.response.fire()}, writeEnable: ${io.request.bits.writeEnable}, address: ${io.request.bits.address}, tag: ${tag}, index: ${index}, hit: ${hit}, regNumHits: ${regNumHits}\n"
+    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire()}, response.fire(): ${io.response.fire()}, writeEnable: ${io.request.bits.writeEnable}, address: ${io.request.bits.address}, tag: ${tag}, index: ${index}, regNumHits: ${regNumHits}\n"
   )
 }
 
