@@ -116,6 +116,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
     metaArray(fi).dirty := true.B
     metaArray(fi).tag := tag
     metaArray(fi).address := address
+    metaArray(fi).timestamp := currentCycle
     dataArray(fi) := io.request.bits.writeData
   }
 
@@ -126,6 +127,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
     metaArray(fi).dirty := false.B
     metaArray(fi).tag := tagReg
     metaArray(fi).address := addressReg
+    metaArray(fi).timestamp := currentCycle
     dataArray(fi) := memory.io.readData
   }
 
@@ -150,6 +152,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
 
             var fi = fullIndex(index, way)
 
+            metaArray(fi).timestamp := currentCycle
             dataArray(fi) := io.request.bits.writeData
 
             regState := sWriteResponse
@@ -175,6 +178,10 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
         }.otherwise {
           when(hit) {
             regNumHits := regNumHits + 1.U
+
+            var fi = fullIndex(index, way)
+
+            metaArray(fi).timestamp := currentCycle
             
             regState := sReadData
           }.otherwise {
