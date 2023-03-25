@@ -6,7 +6,7 @@ import chisel3.util._
 import scala.collection.mutable.ListBuffer
 
 class Cache1Tester(dut: Cache1) extends PeekPokeTester(dut) {
-    // (writeEnable, address, data)
+    // TODO: (writeEnable, address, data) -> (threadId, pc, writeEnable, address, writeData)
     var trace = new ListBuffer[(Boolean, Int, Int)]()
 
     val numAccesses = 1024
