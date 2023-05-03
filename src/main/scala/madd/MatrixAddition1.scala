@@ -4,6 +4,7 @@ import chisel3._
 import chisel3.util._
 import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
 
+// this module implements a simple adder
 class MatrixAddition1(M: Int, N: Int) extends Module {
   val io = IO(new MatrixAddition1IO(M, N))
 
