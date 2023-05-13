@@ -1,18 +1,36 @@
 # README.md
 
-Matrix addition and cache samples.
+Chisel Lab.
 
-# File Structure
+# Examples 例子
 
 src/main/scala/madd/MatrixAddition1*.scala - Single-Cycle matrix addition sample in Chisel 3
 src/main/scala/madd/MatrixAddition2*.scala - Multi-Cycle matrix addition sample in Chisel 3
 src/main/scala/madd/MatrixAddition3*.scala - Pipelined matrix addition sample in Chisel 3
 src/main/scala/cache/Cache1.scala - Cache sample in Chisel 3
 
-# Usage
+# Usage 用法
 
-Step 1. Use Visual Studio Code (https://code.visualstudio.com/) + Docker Extension (Docker + Remote Containers, both by Microsoft) to attach to the Docker container as told by the instructor. 
+1. 配置环境，只需运行一次，在VSCode的Terminal中运行:
 
-Step 2. Inside the container, run `make test` to run sample test for single cycle, multi-cycle, pipelined matrix addition and cache samples.
+```bash
+./prepare.sh
+```
 
-Step 3. Implement, run and test single-cycle, multi-cycle, pipelined matrix multiplication and cache in Chisel 3.
+2. 修改、完善代码
+
+需要修改的地方：
+
+src/main/scala/prefetcher/StridePrefetcher.scala - Stride prefetcher (Stride预取器模块)
+src/main/scala/prefetcher/StridePrefetcherIO.scala - Stride prefetcher IO （Stride预取器IO）
+src/main/scala/prefetcher/StridePrefetcherTester.scala - Stride prefetcher tester （Stride预取器单元测试）
+
+3. 运行单元测试，在VSCode的Terminal中运行：
+
+```bash
+./run.sh
+```
+
+4. 修改、完善代码
+5. 运行单元测试，在VSCode的Terminal中运行
+...
