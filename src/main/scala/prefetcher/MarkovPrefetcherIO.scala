@@ -8,6 +8,4 @@ class MarkovPrefetcherIO extends Bundle {
   val addr = Input(UInt(32.W))
   val prefetch = Output(Bool())
   val prefetchAddr = Output(UInt(32.W))
-
-  override def cloneType = new MarkovPrefetcherIO().asInstanceOf[this.type]
 }

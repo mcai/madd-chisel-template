@@ -16,8 +16,6 @@ class Packet(val config: NoCConfig, val payloadIndexBits: Int, val payloadDataBi
   val memories = Vec(config.diameter + 1, UInt(log2Ceil(config.numRouters).W))
   val numMemories = UInt(log2Ceil(config.diameter + 1).W)
 
-  override def cloneType = new Packet(config, payloadIndexBits, payloadDataBits).asInstanceOf[this.type]
-
   def existsRouterIdInMemories(routerId: UInt) = {
     this.memories.zipWithIndex.map { case (memory, i) => i.U < this.numMemories && memory === routerId }.fold(false.B)(_ || _)
   }

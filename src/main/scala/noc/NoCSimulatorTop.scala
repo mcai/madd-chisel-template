@@ -89,7 +89,7 @@ class NoCSimulatorTop(
       )
     )
 
-    inArbiter.io.in <> packetGenerators.map(_.io.packetOut)
+    inArbiter.io.in <> packetGenerators.map(_.io.packetOut).toSeq
 
     simulator.io.packetIn <> inArbiter.io.out
   } else {

@@ -11,7 +11,5 @@ class NoCSimulatorTopIO(val config: NoCConfig, val payloadIndexBits: Int, val pa
 
   val numDataPacketsReceived = Output(UInt(32.W))
   val numDataPacketsSent = Output(UInt(32.W))
-
-  override def cloneType = new NoCSimulatorTopIO(config, payloadIndexBits, payloadDataBits).asInstanceOf[this.type]
 }
 

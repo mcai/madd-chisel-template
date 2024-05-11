@@ -9,6 +9,4 @@ class RouterIO(val config: NoCConfig, val payloadIndexBits: Int, val payloadData
 
   val numFreeSlotsIn = Input(Vec(Direction.size, UInt(config.maxInputBufferSize.W)))
   val numFreeSlotsOut = Output(Vec(Direction.size, UInt(config.maxInputBufferSize.W)))
-
-  override def cloneType = new RouterIO(config, payloadIndexBits, payloadDataBits).asInstanceOf[this.type]
 }

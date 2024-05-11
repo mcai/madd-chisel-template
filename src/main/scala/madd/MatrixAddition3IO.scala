@@ -10,7 +10,4 @@ class MatrixAddition3IO(M: Int, N: Int) extends Bundle {
   }))
 
   val out = ValidIO(Vec(M * N, SInt(32.W)))
-
-  override def cloneType =
-    new MatrixAddition3IO(M, N).asInstanceOf[this.type]
 }
