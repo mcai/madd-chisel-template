@@ -1,35 +1,37 @@
 package prefetcher
 
 import chisel3._
-import chisel3.iotesters.PeekPokeTester
-import chisel3.util._
+import chisel3.experimental.BundleLiterals._
+import chisel3.simulator.EphemeralSimulator._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 
-// TODO: update this module to implement unit testing for Markov prefetching.
-class MarkovPrefetcherTester(dut: MarkovPrefetcher) extends PeekPokeTester(dut) {
-  // Test case 1: Simple sequence
-  val addresses1 = Seq(0x100, 0x104, 0x108, 0x10C, 0x110)
-  for (addr <- addresses1) {
-    poke(dut.io.addr, addr)
-    step(1)
-    expect(dut.io.prefetch, 1)
-    expect(dut.io.prefetchAddr, addr + 4)
+class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
+  "MarkovPrefetcher should predict the next address based on Markov chain" in {
+    simulate(new MarkovPrefetcher()) { dut =>
+      // Test case 1: Simple sequence
+      val addresses1 = Seq(0x100, 0x104, 0x108, 0x10C, 0x110)
+      for (addr <- addresses1) {
+        dut.io.addr.poke(addr.U)
+        dut.clock.step(1)
+        dut.io.prefetch.expect(true.B)
+        dut.io.prefetchAddr.expect((addr + 4).U)
+      }
+
+      // Test case 2: Repetitive sequence
+      val addresses2 = Seq(0x200, 0x204, 0x200, 0x204, 0x200, 0x204)
+      for (addr <- addresses2) {
+        dut.io.addr.poke(addr.U)
+        dut.clock.step(1)
+        dut.io.prefetch.expect(true.B)
+        dut.io.prefetchAddr.expect(if (addr == 0x200) 0x204.U else 0x200.U)
+      }
+
+      // Add more test cases as needed
+    }
   }
-
-  // Test case 2: Repetitive sequence
-  val addresses2 = Seq(0x200, 0x204, 0x200, 0x204, 0x200, 0x204)
-  for (addr <- addresses2) {
-    poke(dut.io.addr, addr)
-    step(1)
-    expect(dut.io.prefetch, 1)
-    expect(dut.io.prefetchAddr, if (addr == 0x200) 0x204 else 0x200)
-  }
-
-  // Add more test cases as needed
-
 }
 
 object MarkovPrefetcherTester extends App {
-  chisel3.iotesters.Driver(() => new MarkovPrefetcher()) { dut =>
-    new MarkovPrefetcherTester(dut)
-  }
+  (new MarkovPrefetcherSpec).execute()
 }

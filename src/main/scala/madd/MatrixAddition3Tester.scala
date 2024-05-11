@@ -1,37 +1,39 @@
 package madd
 
 import chisel3._
-import chisel3.iotesters.PeekPokeTester
-import chisel3.util._
+import chisel3.experimental.BundleLiterals._
+import chisel3.simulator.EphemeralSimulator._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 
-class MatrixAddition3Tester(dut: MatrixAddition3)
-    extends PeekPokeTester(dut) {
-  poke(dut.io.in.valid, true)
+class MatrixAddition3Spec extends AnyFreeSpec with Matchers {
+  "MatrixAddition3 should add two matrices" in {
+    simulate(new MatrixAddition3(3, 2)) { dut =>
+      dut.io.in.valid.poke(true.B)
 
-  for (i <- 0 until 3 * 2) {
-    while (peek(dut.io.in.ready) == BigInt(0)) {
-      step(1)
+      for (i <- 0 until 3 * 2) {
+        while (dut.io.in.ready.peek() == false.B) {
+          dut.clock.step(1)
+        }
+
+        dut.io.in.bits.a.poke(i.S)
+        dut.io.in.bits.b.poke(i.S)
+        dut.clock.step(1)
+      }
+
+      dut.io.in.valid.poke(false.B)
+
+      while (dut.io.out.valid.peek() == false.B) {
+        dut.clock.step(1)
+      }
+
+      for (i <- 0 until 3 * 2) {
+        dut.io.out.bits(i).expect((i * 2).S)
+      }
     }
-
-    poke(dut.io.in.bits.a, i)
-    poke(dut.io.in.bits.b, i)
-
-    step(1)
-  }
-
-  poke(dut.io.in.valid, false)
-
-  while (peek(dut.io.out.valid) == BigInt(0)) {
-    step(1)
-  }
-
-  for (i <- 0 until 3 * 2) {
-    expect(dut.io.out.bits(i), i * 2)
   }
 }
 
 object MatrixAddition3Tester extends App {
-  chisel3.iotesters.Driver(() => new MatrixAddition3(3, 2)) { dut =>
-    new MatrixAddition3Tester(dut)
-  }
+  (new MatrixAddition3Spec).execute()
 }

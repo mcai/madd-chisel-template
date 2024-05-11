@@ -1,23 +1,27 @@
 package madd
 
 import chisel3._
-import chisel3.iotesters.PeekPokeTester
-import chisel3.util._
+import chisel3.experimental.BundleLiterals._
+import chisel3.simulator.EphemeralSimulator._
+import org.scalatest.freespec.AnyFreeSpec
+import org.scalatest.matchers.must.Matchers
 
-class MatrixAddition1Tester(dut: MatrixAddition1)
-    extends PeekPokeTester(dut) {
-  for (i <- 0 until 3 * 2) {
-    poke(dut.io.a(i), i)
-    poke(dut.io.b(i), i)
-  }
+class MatrixAddition1Spec extends AnyFreeSpec with Matchers {
+  "MatrixAddition1 should add two matrices" in {
+    simulate(new MatrixAddition1(3, 2)) { dut =>
+      for (i <- 0 until 3 * 2) {
+        dut.io.a(i).poke(i.S)
+        dut.io.b(i).poke(i.S)
+      }
+      dut.clock.step(1)
 
-  for (i <- 0 until 3 * 2) {
-    expect(dut.io.out(i), i * 2)
+      for (i <- 0 until 3 * 2) {
+        dut.io.out(i).expect((i * 2).S)
+      }
+    }
   }
 }
 
 object MatrixAddition1Tester extends App {
-  chisel3.iotesters.Driver(() => new MatrixAddition1(3, 2)) { dut =>
-    new MatrixAddition1Tester(dut)
-  }
+  (new MatrixAddition1Spec).execute()
 }
