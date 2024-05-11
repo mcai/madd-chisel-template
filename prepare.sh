@@ -1,10 +1,16 @@
-sudo apt-get update && sudo apt-get install curl vim openjdk-11-jdk -y
+sudo apt-get update
+sudo apt-get install -y wget apt-transport-https gnupg curl vim
+wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | sudo apt-key add -
+echo "deb https://packages.adoptium.net/artifactory/deb $(lsb_release -sc) main" | sudo tee /etc/apt/sources.list.d/adoptium.list
+
+sudo apt-get update
+sudo apt-get install -y temurin-17-jdk
 
 mkdir -p ~/working/ && \
     cd ~/working/ && \
-    curl -L -o sbt-1.4.9.deb https://repo.scala-sbt.org/scalasbt/debian/sbt-1.4.9.deb && \
-    sudo dpkg -i sbt-1.4.9.deb && \
-    rm sbt-1.4.9.deb && \
+    curl -L -o sbt-1.9.7.deb https://repo.scala-sbt.org/scalasbt/debian/sbt-1.9.7.deb && \
+    sudo dpkg -i sbt-1.9.7.deb && \
+    rm sbt-1.9.7.deb && \
     sudo apt-get update && \
     sudo apt-get install sbt -y && \
     cd && \
