@@ -14,8 +14,8 @@ class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
       for (addr <- addresses1) {
         dut.io.addr.poke(addr.U)
         dut.clock.step(1)
-        dut.io.prefetch.expect(true.B)
-        dut.io.prefetchAddr.expect((addr + 4).U)
+        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for address ${addr.toHexString}")
+        dut.io.prefetchAddr.expect((addr + 4).U, s"Prefetch address should be ${addr.toHexString} + 4")
       }
 
       // Test case 2: Repetitive sequence
@@ -23,8 +23,8 @@ class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
       for (addr <- addresses2) {
         dut.io.addr.poke(addr.U)
         dut.clock.step(1)
-        dut.io.prefetch.expect(true.B)
-        dut.io.prefetchAddr.expect(if (addr == 0x200) 0x204.U else 0x200.U)
+        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for repetitive sequence at address ${addr.toHexString}")
+        dut.io.prefetchAddr.expect(if (addr == 0x200) 0x204.U else 0x200.U, s"Prefetch address should toggle between 0x200 and 0x204, current address: ${addr.toHexString}")
       }
 
       // Add more test cases as needed
