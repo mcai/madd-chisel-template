@@ -59,7 +59,7 @@ class NoCConfig {
       result(i).dest := DontCare
     }
 
-    val neighborsVerify: mutable.Map[Int, Int] = neighbors(routerId.litValue().toInt)
+    val neighborsVerify: mutable.Map[Int, Int] = neighbors(routerId.litValue.toInt)
 
     when (y > 0.U) {
       result(Direction.north).valid := true.B

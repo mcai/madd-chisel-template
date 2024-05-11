@@ -3,8 +3,7 @@ package noc
 import chisel3._
 import chisel3.util._
 import common.CurrentCycle
-import chisel3.stage.ChiselStage
-import chisel3.stage.ChiselGeneratorAnnotation
+import _root_.circt.stage.ChiselStage
 
 class Router(
     val config: NoCConfig,
@@ -97,13 +96,12 @@ class Router(
   }
 
   (0 until Direction.size).foreach { i =>
-    when(io.packetIn(i).fire()) {
+    when(io.packetIn(i).fire) {
       chisel3.printf(
         p"[$currentCycle Router#$id.in#$i] Received: ${io.packetIn(i).bits}\n"
       )
     }
-
-    when(io.packetOut(i).fire()) {
+    when(io.packetOut(i).fire) {
       chisel3.printf(
         p"[$currentCycle Router#$id.out#$i] Sent: ${io.packetOut(i).bits}\n"
       )
@@ -113,11 +111,5 @@ class Router(
 
 object Router extends App {
   private val config = NoCConfig()
-
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() => new Router(config, 0, 8, 16))
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new Router(config, 0, 8, 16))
 }

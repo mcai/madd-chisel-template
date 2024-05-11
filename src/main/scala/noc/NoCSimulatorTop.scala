@@ -10,8 +10,7 @@ import noc.traffic.{
 }
 
 import scala.collection.mutable.ArrayBuffer
-import chisel3.stage.ChiselStage
-import chisel3.stage.ChiselGeneratorAnnotation
+import _root_.circt.stage.ChiselStage
 
 class NoCSimulatorTop(
     val config: NoCConfig,
@@ -113,13 +112,5 @@ class NoCSimulatorTop(
 
 object NoCSimulatorTop extends App {
   private val config = NoCConfig()
-
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() =>
-        new NoCSimulatorTop(config, 100, 8, 16)
-      )
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new NoCSimulatorTop(config, 100, 8, 16))
 }

@@ -2,7 +2,7 @@ package madd
 
 import chisel3._
 import chisel3.util._
-import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
+import _root_.circt.stage.ChiselStage
 import common.CurrentCycle
 
 class MatrixAddition2(M: Int, N: Int)
@@ -30,7 +30,7 @@ class MatrixAddition2(M: Int, N: Int)
     is(sLoad) {
       io.in.ready := true.B
 
-      when(io.in.fire()) {
+      when(io.in.fire) {
         regA := io.in.bits.a
         regB := io.in.bits.b
         state := sCompute
@@ -63,10 +63,5 @@ class MatrixAddition2(M: Int, N: Int)
 }
 
 object MatrixAddition2 extends App {
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() => new MatrixAddition2(3, 2))
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new MatrixAddition2(3, 2))
 }

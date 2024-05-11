@@ -2,7 +2,7 @@ package madd
 
 import chisel3._
 import chisel3.util._
-import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
+import _root_.circt.stage.ChiselStage
 
 // TODO: update this module to implement stride prefetching.
 class MatrixAddition1(M: Int, N: Int) extends Module {
@@ -22,10 +22,5 @@ class MatrixAddition1(M: Int, N: Int) extends Module {
 }
 
 object MatrixAddition1 extends App {
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() => new MatrixAddition1(3, 2))
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new MatrixAddition1(3, 2))
 }

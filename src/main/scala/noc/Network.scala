@@ -3,8 +3,7 @@ package noc
 import common.CurrentCycle
 import chisel3._
 import chisel3.util._
-import chisel3.stage.ChiselStage
-import chisel3.stage.ChiselGeneratorAnnotation
+import _root_.circt.stage.ChiselStage
 
 // Example mesh topology (64 = 8 x 8):
 //
@@ -105,13 +104,13 @@ class Network(
       connectRouters(i, i - 1, Direction.west)
     }
 
-    when(io.packetIn(i).fire()) {
+    when(io.packetIn(i).fire) {
       chisel3.printf(
         p"[$currentCycle Network.in(Router#$i)] Received: ${io.packetIn(i).bits}\n"
       )
     }
 
-    when(io.packetOut(i).fire()) {
+    when(io.packetOut(i).fire) {
       chisel3.printf(
         p"[$currentCycle Network.out(Router#$i)] Sent: ${io.packetOut(i).bits}\n"
       )
@@ -121,11 +120,5 @@ class Network(
 
 object Network extends App {
   private val config = NoCConfig()
-
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() => new Network(config, 8, 16))
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new Network(config, 8, 16))
 }

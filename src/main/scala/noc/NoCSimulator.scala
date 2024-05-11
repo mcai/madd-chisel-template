@@ -3,8 +3,7 @@ package noc
 import common.{CurrentCycle, Demux}
 import chisel3._
 import chisel3.util._
-import chisel3.stage.ChiselStage
-import chisel3.stage.ChiselGeneratorAnnotation
+import _root_.circt.stage.ChiselStage
 
 class NoCSimulator(
     val config: NoCConfig,
@@ -58,26 +57,26 @@ class NoCSimulator(
   io.packetOut <> outArbiter.io.out
 
   private val (numDataPacketsReceived, _) =
-    Counter(io.packetIn.fire(), Int.MaxValue)
+    Counter(io.packetIn.fire, Int.MaxValue)
   private val (numDataPacketsSent, _) =
-    Counter(io.packetOut.fire(), Int.MaxValue)
+    Counter(io.packetOut.fire, Int.MaxValue)
 
   io.numDataPacketsReceived := numDataPacketsReceived
   io.numDataPacketsSent := numDataPacketsSent
 
-  when(io.packetIn.fire()) {
+  when(io.packetIn.fire) {
     chisel3.printf(
       p"[$currentCycle NoCSimulator] Received: ${io.packetIn.bits}\n"
     )
   }
 
-  when(io.packetOut.fire()) {
+  when(io.packetOut.fire) {
     chisel3.printf(
       p"[$currentCycle NoCSimulator] Sent: ${io.packetOut.bits}\n"
     )
   }
 
-  when(io.packetIn.fire() || io.packetOut.fire()) {
+  when(io.packetIn.fire || io.packetOut.fire) {
     chisel3.printf(
       p"[$currentCycle NoCSimulator] numDataPacketsReceived = $numDataPacketsReceived, numDataPacketsSent = $numDataPacketsSent\n"
     )
@@ -86,11 +85,5 @@ class NoCSimulator(
 
 object NoCSimulator extends App {
   private val config = NoCConfig()
-
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() => new NoCSimulator(config, 8, 16))
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new NoCSimulator(config, 8, 16))
 }

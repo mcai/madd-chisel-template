@@ -3,8 +3,7 @@ package noc
 import chisel3._
 import chisel3.util._
 import common.Demux
-import chisel3.stage.ChiselStage
-import chisel3.stage.ChiselGeneratorAnnotation
+import _root_.circt.stage.ChiselStage
 
 class InputBuffer(
     val config: NoCConfig,
@@ -73,11 +72,5 @@ class InputBuffer(
 
 object InputBuffer extends App {
   private val config = NoCConfig()
-
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() => new InputBuffer(config, 8, 16))
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new InputBuffer(config, 8, 16))
 }

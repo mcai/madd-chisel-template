@@ -2,8 +2,8 @@ package cache
 
 import chisel3._
 import chisel3.util._
-import chisel3.stage.{ChiselStage, ChiselGeneratorAnnotation}
 import common.CurrentCycle
+import _root_.circt.stage.ChiselStage
 
 class Meta extends Bundle with CacheConfig {
   val valid = Bool()
@@ -140,7 +140,7 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
     is(sIdle) {
       io.request.ready := true.B
 
-      when(io.request.fire()) {
+      when(io.request.fire) {
         addressReg := io.request.bits.address
 
         var way = lookup(index, tag)
@@ -218,29 +218,24 @@ class Cache1 extends Module with CacheConfig with CurrentCycle {
       io.response.valid := true.B
       io.response.bits.readData := dataArray(fi)
 
-      when(io.response.fire()) {
+      when(io.response.fire) {
         regState := sIdle
       }
     }
     is(sWriteResponse) {
       io.response.valid := true.B
 
-      when(io.response.fire()) {
+      when(io.response.fire) {
         regState := sIdle
       }
     }
   }
 
   chisel3.printf(
-    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire()}, response.fire(): ${io.response.fire()}, writeEnable: ${io.request.bits.writeEnable}, address: ${io.request.bits.address}, tag: ${tag}, index: ${index}, regNumHits: ${regNumHits}\n"
+    p"[$currentCycle] regState: ${regState}, request.fire(): ${io.request.fire}, response.fire(): ${io.response.fire}, writeEnable: ${io.request.bits.writeEnable}, address: ${io.request.bits.address}, tag: ${tag}, index: ${index}, regNumHits: ${regNumHits}\n"
   )
 }
 
 object Cache1 extends App {
-  (new ChiselStage).execute(
-    Array("-X", "verilog", "-td", "source/"),
-    Seq(
-      ChiselGeneratorAnnotation(() => new Cache1())
-    )
-  )
+  ChiselStage.emitSystemVerilogFile(new Cache1)
 }
