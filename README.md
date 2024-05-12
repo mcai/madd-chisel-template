@@ -1,38 +1,34 @@
-# README.md
+# Chisel Lab
 
-Chisel Lab.
+## 使用方法
 
-## Usage 用法
+0. 获取 GitHub 账号并创建 Codespace：
+   访问 [GitHub 官网](https://github.com) 注册或登录您的 GitHub 账号。前往 [madd-chisel-template 项目页面](https://github.com/mcai/madd-chisel-template)，点击“Code”绿色按钮选择创建 Codespace。选择 main 分支后，可选择使用 VSCode Web 版或桌面版进行后续操作。
 
-0. 获取GitHub账号并创建Codespace：
-   前往 [https://github.com](https://github.com) 注册或登录您的GitHub账号。访问 [https://github.com/mcai/madd-chisel-template](https://github.com/mcai/madd-chisel-template)，点击"Code"绿色按钮并选择创建Codespace，选择main分支后使用VSCode web或VSCode桌面版本进行后续步骤。
-
-1. 配置环境，只需运行一次，在VSCode的Terminal中运行:
+1. 配置环境，此步骤仅需运行一次，在 VSCode 的 Terminal 中执行：
    ```bash
    ./prepare.sh
    ```
 
-2. 修改、完善代码
+2. 修改和完善代码：
 
-   需要修改的地方：
-   src/main/scala/prefetcher/MarkovPrefetcher.scala - Markov prefetcher (Markov预取器模块)
-   src/main/scala/prefetcher/MarkovPrefetcherIO.scala - Markov prefetcher IO （Markov预取器IO）
-   src/main/scala/prefetcher/MarkovPrefetcherTester.scala - Markov prefetcher tester （Markov预取器单元测试）
+   修改文件如下：
+   - `src/main/scala/prefetcher/MarkovPrefetcher.scala` - Markov 预取器模块
+   - `src/main/scala/prefetcher/MarkovPrefetcherIO.scala` - Markov 预取器 IO
+   - `src/main/scala/prefetcher/MarkovPrefetcherTester.scala` - Markov 预取器单元测试
 
-3. 运行单元测试，在VSCode的Terminal中运行：
-
+3. 运行单元测试，在 VSCode 的 Terminal 中执行：
    ```bash
    ./run.sh
    ```
 
-4. 修改、完善代码
+4. 重复修改和完善代码步骤。
 
-5. 运行单元测试，在VSCode的Terminal中运行
-   ...
+5. 再次运行单元测试。
 
-## Examples 例子
+## 示例代码
 
-src/main/scala/madd/MatrixAddition1*.scala - Single-Cycle matrix addition sample in Chisel 6
-src/main/scala/madd/MatrixAddition2*.scala - Multi-Cycle matrix addition sample in Chisel 6
-src/main/scala/madd/MatrixAddition3*.scala - Pipelined matrix addition sample in Chisel 6
-src/main/scala/cache/Cache1.scala - Cache sample in Chisel 6
+- `src/main/scala/madd/MatrixAddition1*.scala` - Chisel 6 单周期矩阵加法示例
+- `src/main/scala/madd/MatrixAddition2*.scala` - Chisel 6 多周期矩阵加法示例
+- `src/main/scala/madd/MatrixAddition3*.scala` - Chisel 6 流水线矩阵加法示例
+- `src/main/scala/cache/Cache1.scala` - Chisel 6 缓存示例
