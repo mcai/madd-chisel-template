@@ -11,6 +11,9 @@ src/main/scala/cache/Cache1.scala - Cache sample in Chisel 6
 
 # Usage 用法
 
+0. 获取GitHub账号并创建Codespace：
+   前往 [https://github.com](https://github.com) 注册或登录您的GitHub账号。访问 [https://github.com/mcai/madd-chisel-template](https://github.com/mcai/madd-chisel-template)，点击"Code"绿色按钮并选择创建Codespace，选择main分支后使用VSCode web或VSCode桌面版本进行后续步骤。
+
 1. 配置环境，只需运行一次，在VSCode的Terminal中运行:
    ```bash
    ./prepare.sh
