@@ -4,10 +4,10 @@ Chisel Lab.
 
 # Examples 例子
 
-src/main/scala/madd/MatrixAddition1*.scala - Single-Cycle matrix addition sample in Chisel 3
-src/main/scala/madd/MatrixAddition2*.scala - Multi-Cycle matrix addition sample in Chisel 3
-src/main/scala/madd/MatrixAddition3*.scala - Pipelined matrix addition sample in Chisel 3
-src/main/scala/cache/Cache1.scala - Cache sample in Chisel 3
+src/main/scala/madd/MatrixAddition1*.scala - Single-Cycle matrix addition sample in Chisel 6
+src/main/scala/madd/MatrixAddition2*.scala - Multi-Cycle matrix addition sample in Chisel 6
+src/main/scala/madd/MatrixAddition3*.scala - Pipelined matrix addition sample in Chisel 6
+src/main/scala/cache/Cache1.scala - Cache sample in Chisel 6
 
 # Usage 用法
 
