@@ -182,10 +182,10 @@ class MarkovPrefetcher extends Module {
 
     is(sUpdateHistory2) {
       when(previousAddressValidReg) {
-        // 更新状态转移表
+        // TODO: 更新状态转移表
       }
       when(prefetchReg) {
-        // 用预取地址替换最老的条目
+        // TODO: 用预取地址替换最老的条目
       }
       // TODO: 更新相关的寄存器
       stateReg := sReportResult // 切换到报告结果状态
