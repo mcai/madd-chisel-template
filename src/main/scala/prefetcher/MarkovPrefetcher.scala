@@ -10,7 +10,7 @@ class MarkovPrefetcher extends Module {
 
   // Implement your Markov prefetcher logic here
   io.prefetch := DontCare
-  io.prefetchAddr := DontCare
+  io.prefetchAddress := DontCare
 }
 
 object MarkovPrefetcherMain extends App {

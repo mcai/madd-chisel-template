@@ -11,20 +11,20 @@ class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
     simulate(new MarkovPrefetcher()) { dut =>
       // Test case 1: Simple sequence
       val addresses1 = Seq(0x100, 0x104, 0x108, 0x10C, 0x110)
-      for (addr <- addresses1) {
-        dut.io.addr.poke(addr.U)
+      for (address <- addresses1) {
+        dut.io.address.poke(address.U)
         dut.clock.step(1)
-        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for address ${addr.toHexString}")
-        dut.io.prefetchAddr.expect((addr + 4).U, s"Prefetch address should be ${addr.toHexString} + 4")
+        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for address ${address.toHexString}")
+        dut.io.prefetchAddress.expect((address + 4).U, s"Prefetch address should be ${address.toHexString} + 4")
       }
 
       // Test case 2: Repetitive sequence
       val addresses2 = Seq(0x200, 0x204, 0x200, 0x204, 0x200, 0x204)
-      for (addr <- addresses2) {
-        dut.io.addr.poke(addr.U)
+      for (address <- addresses2) {
+        dut.io.address.poke(address.U)
         dut.clock.step(1)
-        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for repetitive sequence at address ${addr.toHexString}")
-        dut.io.prefetchAddr.expect(if (addr == 0x200) 0x204.U else 0x200.U, s"Prefetch address should toggle between 0x200 and 0x204, current address: ${addr.toHexString}")
+        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for repetitive sequence at address ${address.toHexString}")
+        dut.io.prefetchAddress.expect(if (address == 0x200) 0x204.U else 0x200.U, s"Prefetch address should toggle between 0x200 and 0x204, current address: ${address.toHexString}")
       }
 
       // Add more test cases as needed
