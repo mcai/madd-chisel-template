@@ -7,27 +7,27 @@ import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 
 class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
-  "MarkovPrefetcher should predict the next address based on Markov chain" in {
+  "MarkovPrefetcher 应该根据马尔可夫链预测下一个地址" in {
     simulate(new MarkovPrefetcher()) { dut =>
-      // Test case 1: Simple sequence
+      // 测试用例 1: 简单序列
       val addresses1 = Seq(0x100, 0x104, 0x108, 0x10C, 0x110)
       for (address <- addresses1) {
         dut.io.address.poke(address.U)
         dut.clock.step(1)
-        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for address ${address.toHexString}")
-        dut.io.prefetchAddress.expect((address + 4).U, s"Prefetch address should be ${address.toHexString} + 4")
+        dut.io.prefetch.expect(true.B, s"对于地址 ${address.toHexString}，预取信号应为 true")
+        dut.io.prefetchAddress.expect((address + 4).U, s"预取地址应为 ${address.toHexString} + 4")
       }
 
-      // Test case 2: Repetitive sequence
+      // 测试用例 2: 重复序列
       val addresses2 = Seq(0x200, 0x204, 0x200, 0x204, 0x200, 0x204)
       for (address <- addresses2) {
         dut.io.address.poke(address.U)
         dut.clock.step(1)
-        dut.io.prefetch.expect(true.B, s"Prefetch signal should be true for repetitive sequence at address ${address.toHexString}")
-        dut.io.prefetchAddress.expect(if (address == 0x200) 0x204.U else 0x200.U, s"Prefetch address should toggle between 0x200 and 0x204, current address: ${address.toHexString}")
+        dut.io.prefetch.expect(true.B, s"对于重复序列在地址 ${address.toHexString}，预取信号应为 true")
+        dut.io.prefetchAddress.expect(if (address == 0x200) 0x204.U else 0x200.U, s"预取地址应在 0x200 和 0x204 之间切换，当前地址: ${address.toHexString}")
       }
 
-      // Add more test cases as needed
+      // 根据需要添加更多测试用例
     }
   }
 }

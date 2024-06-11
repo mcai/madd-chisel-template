@@ -4,11 +4,11 @@ import chisel3._
 import chisel3.util._
 import _root_.circt.stage.ChiselStage
 
-// TODO: update this module to implement Markov prefetching.
+// TODO: 更新此模块以实现马尔可夫预取。
 class MarkovPrefetcher extends Module {
   val io = IO(new MarkovPrefetcherIO)
 
-  // Implement your Markov prefetcher logic here
+  // 在此处实现你的马尔可夫预取逻辑
   io.prefetch := DontCare
   io.prefetchAddress := DontCare
 }
