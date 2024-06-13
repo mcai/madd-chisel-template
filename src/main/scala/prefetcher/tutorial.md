@@ -278,17 +278,18 @@ class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
         PrintUtils.printDutOutputs(dut, address, cycle.toLong, stateStr) // 打印DUT的输出
 
         // 在最后一步检查预期结果
+        if (step == 5) {
           if (dut.io.hit.peek().litToBoolean) hits += 1
           if (dut.io.prefetchHit.peek().litToBoolean) prefetchHits += 1
           if (dut.io.demandHit.peek().litToBoolean) demandHits += 1
           if (dut.io.prefetch.peek().litToBoolean) prefetchRequests += 1
 
-          dut.io.hit.expect(event.hit.B)
-          dut.io.prefetchHit.expect(event.prefetchHit.B)
-          dut.io.demandHit.expect(event.demandHit.B)
-          dut.io.prefetch.expect(event.prefetch.B)
+          dut.io.hit.expect(event.hit.B, s"Hit check failed for address $address. Expected: ${event.hit}, Actual: ${dut.io.hit.peek().litToBoolean}")
+          dut.io.prefetchHit.expect(event.prefetchHit.B, s"Prefetch hit check failed for address $address. Expected: ${event.prefetchHit}, Actual: ${dut.io.prefetchHit.peek().litToBoolean}")
+          dut.io.demandHit.expect(event.demandHit.B, s"Demand hit check failed for address $address. Expected: ${event.demandHit}, Actual: ${dut.io.demandHit.peek().litToBoolean}")
+          dut.io.prefetch.expect(event.prefetch.B, s"Prefetch check failed for address $address. Expected: ${event.prefetch}, Actual: ${dut.io.prefetch.peek().litToBoolean}")
           if (event.prefetchAddress.isDefined) {
-            dut.io.prefetchAddress.expect(event.prefetchAddress.get.U)
+            dut.io.prefetchAddress.expect(event.prefetchAddress.get.U, s"Prefetch address check failed for address $address. Expected: ${event.prefetchAddress.get}, Actual: ${dut.io.prefetchAddress.peek().litValue}")
           }
         }
 
