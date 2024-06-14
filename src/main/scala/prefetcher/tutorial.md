@@ -372,7 +372,7 @@ object MarkovPrefetcherTester extends App {
 使用以下命令运行测试：
 
 ```sh
-sbt test
+./run.sh
 ```
 
 ### 参考实现
