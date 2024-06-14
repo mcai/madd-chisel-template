@@ -1,27 +1,18 @@
-## 教程：使用 Chisel 实现马尔科夫预取器
+好的，将 `AccessHistoryEntry` 类定义移到 `MarkovPrefetcherIO.scala` 文件中。以下是更新后的代码：
 
-### 介绍
+### 文件结构
 
-在本教程中，您将学习如何使用 Chisel 实现一个马尔科夫预取器。Chisel 是一种嵌入在 Scala 中的硬件描述语言。马尔科夫预取器是一种硬件模块，旨在根据先前访问的历史预测未来的内存访问，通过预取即将需要的数据来提高内存系统的性能。
+```
+└── prefetcher
+    ├── MarkovPrefetcher.scala
+    ├── MarkovPrefetcherIO.scala
+    ├── MarkovPrefetcherSimulator.scala
+    └── MarkovPrefetcherTester.scala
+```
 
-完成本教程后，您应该能够理解 Chisel 的基本概念，构建一个预取器模块，并使用 Chisel 的测试框架对其进行测试。
+### 步骤1: 定义访问历史条目和 IO 接口: `MarkovPrefetcherIO.scala`
 
-### 前提条件
-
-- 了解数字设计和硬件描述语言的基本知识。
-- 熟悉 Scala 编程语言。
-- 了解内存系统和预取概念的基本知识。
-
-### 设置
-
-1. **安装 Chisel**：按照 [Chisel 安装指南](https://www.chisel-lang.org/getting-started.html) 设置您的环境。
-2. **创建一个新的 Chisel 项目**：您可以使用 [Chisel 模板](https://github.com/freechipsproject/chisel-template) 来启动一个新项目。
-
-### 分步实现
-
-#### 步骤 1：定义访问历史条目
-
-创建一个 `AccessHistoryEntry` 类来存储每次内存访问的信息。
+创建一个 `AccessHistoryEntry` 类来存储每次内存访问的信息，并为马尔科夫预取器模块定义输入和输出信号。
 
 ```scala
 package prefetcher
@@ -35,16 +26,6 @@ class AccessHistoryEntry extends Bundle {
   val prefetch = Bool()         // 是否为预取操作
   val timestamp = UInt(32.W)    // 记录访问的时间戳
 }
-```
-
-#### 步骤 2：定义 IO 接口
-
-为马尔科夫预取器模块定义输入和输出信号。
-
-```scala
-package prefetcher
-
-import chisel3._
 
 // 马尔科夫预取器的 IO 接口
 class MarkovPrefetcherIO extends Bundle {
@@ -67,7 +48,7 @@ class MarkovPrefetcherIO extends Bundle {
 }
 ```
 
-#### 步骤 3：实现马尔科夫预取器模块
+### 步骤2: 实现马尔科夫预取器模块: `MarkovPrefetcher.scala`
 
 创建主要的 `MarkovPrefetcher` 模块。该模块包含预取器的主要逻辑，包括状态机和马尔科夫预测逻辑。
 
@@ -76,7 +57,6 @@ package prefetcher
 
 import chisel3._
 import chisel3.util._
-
 
 // 马尔科夫预取器的工具对象，包含一些实用函数
 object MarkovPrefetcherUtils {
@@ -215,7 +195,151 @@ class MarkovPrefetcher extends Module {
 }
 ```
 
-### 步骤 4：编写测试
+### 步骤3: 编写参考实现: `MarkovPrefetcherSimulator.scala`
+
+为了验证您的 Chisel 设计，请使用以下马尔科夫预取器模拟器的 Scala 实现。此实现可以帮助您理解预取器的预期行为，并与您的 Chisel 设计进行比较。
+
+```scala
+package prefetcher
+
+import scala.collection.mutable
+
+object MarkovPrefetcherSimulator {
+
+  // 定义预取事件类，包含地址、命中信息、预取地址和访问历史记录等字段
+  case class PrefetchEvent(
+    address: Int, // 访问的地址
+    hit: Boolean, // 是否命中
+    prefetchHit: Boolean, // 是否命中预取
+    demandHit: Boolean, // 是否命中需求访问
+    prefetch: Boolean, // 是否进行了预取
+    prefetchAddress: Option[Int], // 预取的地址
+    accessHistory: List[(Int, String)] // 访问历史记录
+  )
+
+  // 获取最可能的下一个地址
+  def getMostProbableNextAddress(transitionTable: Array[Array[Int]], address: Int): Option[Int] = {
+    // 找到当前地址行中转移次数最多的地址
+    val maxTransitions = transitionTable(address).max
+    // 如果最大转移次数为0，则返回None，否则返回对应的下一个地址
+    if (maxTransitions == 0) None else Some(transitionTable(address).indexOf(maxTransitions))
+  }
+
+  // 模拟Markov预取器
+  def simulatePrefetcher(numAddresses: Int, addresses: List[Int], historyWindowSize: Int = 5): List[PrefetchEvent] = {
+    // 初始化转移表，每个元素初始值为0
+    val transitionTable = Array.fill(numAddresses, numAddresses)(0)
+    // 初始化访问历史记录队列，存储最近访问的地址及其访问类型
+    val accessHistory = mutable.Queue[(Int, String)]()
+    // 上一个访问的地址，初始为None
+    var prevAddress: Option[Int] = None
+    // 事件列表，存储每次访问的详细信息
+    var events = List.empty[PrefetchEvent]
+
+    // 遍历每个访问的地址
+    addresses.foreach { address =>
+      var hit = false // 是否命中
+      var prefetchHit = false // 是否命中预取
+      var demandHit = false // 是否命中需求访问
+      var prefetch = false // 是否进行了预取
+      var prefetchAddress: Option[Int] = None // 预取的地址
+
+      // 检查当前地址是否在访问历史记录中
+      accessHistory.zipWithIndex.foreach { case ((histAddress, accessType), i) =>
+        // 如果当前访问地址在历史记录中找到
+        if (address == histAddress) {
+          hit = true // 表示命中
+          // 如果命中且是预取类型，将其标记为非预取
+          if (accessType == "Prefetch") {
+            prefetchHit = true // 预取命中
+            accessHistory(i) = (histAddress, "Demand") // 更新访问类型为需求
+          } else {
+            demandHit = true // 需求访问命中
+          }
+        }
+      }
+
+      // 如果未命中且有上一个地址，更新转移表
+      if (!hit && prevAddress.isDefined) {
+        transitionTable(prevAddress.get)(address) += 1 // 增加转移次数
+      }
+
+      // 更新访问历史记录，删除已经存在的地址
+      accessHistory.dequeueAll(_._1 == address)
+      // 将当前访问地址加入队列，标记为需求访问
+      accessHistory.enqueue((address, "Demand"))
+
+      // 如果访问历史记录超出窗口大小，移除最旧的记录
+      if (accessHistory.size > historyWindowSize) {
+        accessHistory.dequeue()
+      }
+
+      // 进行预取
+      val predictedAddress = getMostProbableNextAddress(transitionTable, address)
+      // 如果预测的地址存在且不在访问历史记录中，则进行预取
+      if (predictedAddress.isDefined && !accessHistory.exists(_._1 == predictedAddress.get)) {
+        // 将预测的地址加入访问历史记录队列，并标记为预取访问
+        accessHistory.enqueue((predictedAddress.get, "Prefetch"))
+        prefetch = true // 标记为进行了预取
+        prefetchAddress = predictedAddress // 记录预取地址
+
+        // 如果访问历史记录超出窗口大小，移除最旧的记录
+        if (accessHistory.size > historyWindowSize) {
+          accessHistory.dequeue()
+        }
+      }
+      
+      // 调试输出：
+      println(s"Address: $address")
+      println(s"  - Current Address: $address")
+      println(s"  - Previous Address: ${prevAddress.getOrElse("None")}")
+      println(s"  - Hit: $hit")
+      println(s"  - Prefetch Hit: $prefetchHit")
+      println(s"  - Demand Hit: $demandHit")
+      println(s"  - Prefetch: $prefetch")
+      println(s"  - Prefetch Address: ${prefetchAddress.getOrElse("None")}")
+      printAccessHistory(accessHistory)
+      printTransitionTable(transitionTable)
+
+      // 更新前一个访问地址为当前地址
+      prevAddress = Some(address)
+      // 创建预取事件对象并加入事件列表
+      events = events :+ PrefetchEvent(
+        address, // 当前访问地址
+        hit, // 是否命中
+        prefetchHit, // 是否命中预取
+        demandHit, // 是否命中需求访问
+        prefetch, // 是否进行了预取
+        prefetchAddress, // 预取的地址
+        accessHistory.toList // 当前的访问历史记录
+      )
+    }
+
+    events
+  }
+
+  // 打印访问历史记录
+  def printAccessHistory(accessHistory: mutable.Queue[(Int, String)]): Unit = {
+    val accessHistoryStr = accessHistory.map { case (address, accessType) =>
+      s"($address, '$accessType')"
+    }.mkString(", ")
+    println(s"  - Access History: [$accessHistoryStr]")
+  }
+
+  // 打印转移表
+  def printTransitionTable(transitionTable: Array[Array[Int]]): Unit = {
+    val transitionTableStr = transitionTable.zipWithIndex.map { case (row, i) =>
+      val entries = row.zipWithIndex.map { case (count, j) =>
+        if (count > 0) s"$j($count)" else ""
+      }.filter(_.nonEmpty).mkString(", ")
+      if (entries.nonEmpty) s"$i -> [$entries]" else ""
+    }.filter(_.nonEmpty).mkString(", ")
+    println(s"  - Transition Table: $transitionTableStr")
+  }
+}
+```
+
+### 步骤4: 编写测试: `MarkovPrefetcherTester.scala`
 
 使用 Chisel 的测试框架来测试您的马尔科夫预取器。在新的文件中定义测试用例。
 
@@ -373,150 +497,6 @@ object MarkovPrefetcherTester extends App {
 
 ```sh
 ./run.sh
-```
-
-### 参考实现
-
-为了验证您的 Chisel 设计，请使用以下马尔科夫预取器模拟器的 Scala 实现。此实现可以帮助您理解预取器的预期行为，并与您的 Chisel 设计进行比较。
-
-```scala
-package prefetcher
-
-import scala.collection.mutable
-
-object MarkovPrefetcherSimulator {
-
-  // 定义预取事件类，包含地址、命中信息、预取地址和访问历史记录等字段
-  case class PrefetchEvent(
-    address: Int, // 访问的地址
-    hit: Boolean, // 是否命中
-    prefetchHit: Boolean, // 是否命中预取
-    demandHit: Boolean, // 是否命中需求访问
-    prefetch: Boolean, // 是否进行了预取
-    prefetchAddress: Option[Int], // 预取的地址
-    accessHistory: List[(Int, String)] // 访问历史记录
-  )
-
-  // 获取最可能的下一个地址
-  def getMostProbableNextAddress(transitionTable: Array[Array[Int]], address: Int): Option[Int] = {
-    // 找到当前地址行中转移次数最多的地址
-    val maxTransitions = transitionTable(address).max
-    // 如果最大转移次数为0，则返回None，否则返回对应的下一个地址
-    if (maxTransitions == 0) None else Some(transitionTable(address).indexOf(maxTransitions))
-  }
-
-  // 模拟Markov预取器
-  def simulatePrefetcher(numAddresses: Int, addresses: List[Int], historyWindowSize: Int = 5): List[PrefetchEvent] = {
-    // 初始化转移表，每个元素初始值为0
-    val transitionTable = Array.fill(numAddresses, numAddresses)(0)
-    // 初始化访问历史记录队列，存储最近访问的地址及其访问类型
-    val accessHistory = mutable.Queue[(Int, String)]()
-    // 上一个访问的地址，初始为None
-    var prevAddress: Option[Int] = None
-    // 事件列表，存储每次访问的详细信息
-    var events = List.empty[PrefetchEvent]
-
-    // 遍历每个访问的地址
-    addresses.foreach { address =>
-      var hit = false // 是否命中
-      var prefetchHit = false // 是否命中预取
-      var demandHit = false // 是否命中需求访问
-      var prefetch = false // 是否进行了预取
-      var prefetchAddress: Option[Int] = None // 预取的地址
-
-      // 检查当前地址是否在访问历史记录中
-      accessHistory.zipWithIndex.foreach { case ((histAddress, accessType), i) =>
-        // 如果当前访问地址在历史记录中找到
-        if (address == histAddress) {
-          hit = true // 表示命中
-          // 如果命中且是预取类型，将其标记为非预取
-          if (accessType == "Prefetch") {
-            prefetchHit = true // 预取命中
-            accessHistory(i) = (histAddress, "Demand") // 更新访问类型为需求
-          } else {
-            demandHit = true // 需求访问命中
-          }
-        }
-      }
-
-      // 如果未命中且有上一个地址，更新转移表
-      if (!hit && prevAddress.isDefined) {
-        transitionTable(prevAddress.get)(address) += 1 // 增加转移次数
-      }
-
-      // 更新访问历史记录，删除已经存在的地址
-      accessHistory.dequeueAll(_._1 == address)
-      // 将当前访问地址加入队列，标记为需求访问
-      accessHistory.enqueue((address, "Demand"))
-
-      // 如果访问历史记录超出窗口大小，移除最旧的记录
-      if (accessHistory.size > historyWindowSize) {
-        accessHistory.dequeue()
-      }
-
-      // 进行预取
-      val predictedAddress = getMostProbableNextAddress(transitionTable, address)
-      // 如果预测的地址存在且不在访问历史记录中，则进行预取
-      if (predictedAddress.isDefined && !accessHistory.exists(_._1 == predictedAddress.get)) {
-        // 将预测的地址加入访问历史记录队列，并标记为预取访问
-        accessHistory.enqueue((predictedAddress.get, "Prefetch"))
-        prefetch = true // 标记为进行了预取
-        prefetchAddress = predictedAddress // 记录预取地址
-
-        // 如果访问历史记录超出窗口大小，移除最旧的记录
-        if (accessHistory.size > historyWindowSize) {
-          accessHistory.dequeue()
-        }
-      }
-      
-      // 调试输出：
-      println(s"Address: $address")
-      println(s"  - Current Address: $address")
-      println(s"  - Previous Address: ${prevAddress.getOrElse("None")}")
-      println(s"  - Hit: $hit")
-      println(s"  - Prefetch Hit: $prefetchHit")
-      println(s"  - Demand Hit: $demandHit")
-      println(s"  - Prefetch: $prefetch")
-      println(s"  - Prefetch Address: ${prefetchAddress.getOrElse("None")}")
-      printAccessHistory(accessHistory)
-      printTransitionTable(transitionTable)
-
-      // 更新前一个访问地址为当前地址
-      prevAddress = Some(address)
-      // 创建预取事件对象并加入事件列表
-      events = events :+ PrefetchEvent(
-        address, // 当前访问地址
-        hit, // 是否命中
-        prefetchHit, // 是否命中预取
-        demandHit, // 是否命中需求访问
-        prefetch, // 是否进行了预取
-        prefetchAddress, // 预取的地址
-        accessHistory.toList // 当前的访问历史记录
-      )
-    }
-
-    events
-  }
-
-  // 打印访问历史记录
-  def printAccessHistory(accessHistory: mutable.Queue[(Int, String)]): Unit = {
-    val accessHistoryStr = accessHistory.map { case (address, accessType) =>
-      s"($address, '$accessType')"
-    }.mkString(", ")
-    println(s"  - Access History: [$accessHistoryStr]")
-  }
-
-  // 打印转移表
-  def printTransitionTable(transitionTable: Array[Array[Int]]): Unit = {
-    val transitionTableStr = transitionTable.zipWithIndex.map { case (row, i) =>
-      val entries = row.zipWithIndex.map { case (count, j) =>
-        if (count > 0) s"$j($count)" else ""
-      }.filter(_.nonEmpty).mkString(", ")
-      if (entries.nonEmpty) s"$i -> [$entries]" else ""
-    }.filter(_.nonEmpty).mkString(", ")
-    println(s"  - Transition Table: $transitionTableStr")
-  }
-}
 ```
 
 ### 结论
