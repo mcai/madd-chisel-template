@@ -468,6 +468,18 @@ object MarkovPrefetcherSimulator {
           accessHistory.dequeue()
         }
       }
+      
+      // 调试输出：
+      println(s"Address: $address")
+      println(s"  - Current Address: $address")
+      println(s"  - Previous Address: ${prevAddress.getOrElse("None")}")
+      println(s"  - Hit: $hit")
+      println(s"  - Prefetch Hit: $prefetchHit")
+      println(s"  - Demand Hit: $demandHit")
+      println(s"  - Prefetch: $prefetch")
+      println(s"  - Prefetch Address: ${prefetchAddress.getOrElse("None")}")
+      printAccessHistory(accessHistory)
+      printTransitionTable(transitionTable)
 
       // 更新前一个访问地址为当前地址
       prevAddress = Some(address)
@@ -481,18 +493,6 @@ object MarkovPrefetcherSimulator {
         prefetchAddress, // 预取的地址
         accessHistory.toList // 当前的访问历史记录
       )
-      
-      // 调试输出：
-      println(s"Address: $address")
-      println(s"  - Current Address: $address")
-      println(s"  - Previous Address: ${prevAddress.getOrElse("None")}")
-      println(s"  - Hit: $hit")
-      println(s"  - Prefetch Hit: $prefetchHit")
-      println(s"  - Demand Hit: $demandHit")
-      println(s"  - Prefetch: $prefetch")
-      println(s"  - Prefetch Address: ${prefetchAddress.getOrElse("None")}")
-      printAccessHistory(accessHistory)
-      printTransitionTable(transitionTable)
     }
 
     events
