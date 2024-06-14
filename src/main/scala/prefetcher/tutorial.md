@@ -229,21 +229,54 @@ import chisel3.simulator.EphemeralSimulator._
 import org.scalatest.freespec.AnyFreeSpec
 import org.scalatest.matchers.must.Matchers
 
-// 打印访问历史和转移表的辅助函数
+// 打印工具对象，包含打印访问历史和状态转移表的函数
 object PrintUtils {
+  // 打印访问历史
   def printAccessHistory(dut: MarkovPrefetcher): Unit = {
-    // TODO: 打印访问历史的逻辑
+    val accessHistory = dut.io.accessHistory.map { entry =>
+      val address = entry.address.peek().litValue // 获取地址值
+      val prefetchType = if (entry.prefetch.peek().litToBoolean) "prefetch" else "demand" // 判断是预取还是需求
+      val valid = entry.valid.peek().litToBoolean // 获取条目是否有效
+      val timestamp = entry.timestamp.peek().litValue // 获取时间戳
+      (address, prefetchType, valid, timestamp) // 返回访问历史条目信息的元组
+    }
+
+    val sortedAccessHistory = accessHistory.filter(_._3).sortBy(_._4) // 过滤有效条目并按时间戳排序
+
+    val accessHistoryStr = sortedAccessHistory.map { case (address, prefetchType, _, timestamp) =>
+      s"($address, '$prefetchType', $timestamp)" // 格式化访问历史条目为字符串
+    }.mkString(", ")
+
+    println(s"  - Access history: [$accessHistoryStr]") // 打印访问历史
   }
 
+  // 打印状态转移表
   def printTransitionTable(dut: MarkovPrefetcher): Unit = {
-    // TODO: 打印转移表的逻辑
+    val transitionTableStr = (0 until 32).map { i =>
+      val entries = dut.io.transitionTable(i).zipWithIndex.map { case (count, idx) =>
+        if (count.peek().litValue > 0) s"$idx(${count.peek().litValue})" else "" // 获取非零计数的转移条目
+      }.filter(_.nonEmpty).mkString(", ")
+      if (entries.nonEmpty) s"$i -> [$entries]" else "" // 格式化转移条目为字符串
+    }.filter(_.nonEmpty).mkString(", ")
+    println(s"  - Transition table: $transitionTableStr") // 打印状态转移表
   }
 
+  // 打印DUT（Device Under Test）的输出
   def printDutOutputs(dut: MarkovPrefetcher, address: Int, cycle: Long, state: String): Unit = {
     println(s"[$cycle] State: $state, Address: $address")
-    // 打印 DUT 输出的逻辑
-    PrintUtils.printAccessHistory(dut)
-    PrintUtils.printTransitionTable(dut)
+    println(s"  - Current Address: ${dut.io.currentAddress.peek().litValue}")
+    println(s"  - Previous Address: ${dut.io.previousAddress.peek().litValue}")
+    println(s"  - Previous Address Valid: ${dut.io.previousAddressValid.peek().litToBoolean}")
+    println(s"  - Hit: ${dut.io.hit.peek().litToBoolean}")
+    println(s"  - Prefetch Hit: ${dut.io.prefetchHit.peek().litToBoolean}")
+    println(s"  - Demand Hit: ${dut.io.demandHit.peek().litToBoolean}")
+    println(s"  - Prefetch: ${dut.io.prefetch.peek().litToBoolean}")
+    println(s"  - Prefetch Address: ${dut.io.prefetchAddress.peek().litValue}")
+    println(s"  - Most Probable Next Address: ${dut.io.mostProbableNextAddress.peek().litValue}")
+    println(s"  - Most Probable Next Address Valid: ${dut.io.mostProbableNextAddressValid.peek().litToBoolean}")
+    println(s"  - Most Probable Next Address In History: ${dut.io.mostProbableNextAddressInHistory.peek().litToBoolean}")
+    PrintUtils.printAccessHistory(dut) // 打印访问历史
+    PrintUtils.printTransitionTable(dut) // 打印状态转移表
   }
 }
 
@@ -267,6 +300,11 @@ class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
 
     // 迭代测试地址和预期事件
     for ((address, event) <- addresses.zip(expectedEvents)) {
+      val accessHistoryStr = event.accessHistory.map { case (address, accessType) =>
+        s"($address, '$accessType')" // 格式化访问历史条目为字符串
+      }.mkString(", ")
+      println(s"(Scala) Event - Address: ${event.address}, Hit: ${event.hit}, Prefetch Hit: ${event.prefetchHit}, Demand Hit: ${event.demandHit}, Prefetch: ${event.prefetch}, Prefetch Address: ${event.prefetchAddress.getOrElse("None")}, Access History: [$accessHistoryStr]")
+
       dut.io.address.poke(address.U) // 将地址输入DUT
 
       // 迭代FSM的每个步骤
@@ -297,7 +335,7 @@ class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
       }
     }
 
-    println(f"\nHits: $hits, Prefetch Hits: $prefetchHits, Demand Hits: $demandHits, Prefetch Requests: $prefetchRequests")
+    println(f"\nHits: $hits, Prefetch Hits: $prefetchHits, Demand Hits: $demandHits, Prefetch Requests: $prefetchRequests") // 打印测试结果
   }
 
   // 测试实例
@@ -316,11 +354,16 @@ class MarkovPrefetcherSpec extends AnyFreeSpec with Matchers {
       println(s"\n  - ${addresses.mkString(", ")}")
 
       simulate(new MarkovPrefetcher()) { dut =>
-        val expectedEvents = MarkovPrefetcherSimulator.simulatePrefetcher(32, addresses.toList)
+        val expectedEvents = MarkovPrefetcherSimulator.simulatePrefetcher(32, addresses.toList) // 生成预期事件
         runTest(dut, addresses, expectedEvents) // 运行测试
       }
     }
   }
+}
+
+// MarkovPrefetcher 测试器主程序
+object MarkovPrefetcherTester extends App {
+  (new MarkovPrefetcherSpec).execute() // 执行测试
 }
 ```
 
