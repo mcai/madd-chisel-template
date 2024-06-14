@@ -1,5 +1,3 @@
-好的，将 `AccessHistoryEntry` 类定义移到 `MarkovPrefetcherIO.scala` 文件中。以下是更新后的代码：
-
 ### 文件结构
 
 ```
